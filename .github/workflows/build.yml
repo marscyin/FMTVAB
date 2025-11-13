@@ -48,6 +48,8 @@ jobs:
           ref: ${{ env.SOURCE_BRANCH }}
           path: src
 
+
+           
       - name: Capture commit hashes
         id: commit_info
         run: |
@@ -177,6 +179,14 @@ jobs:
           fi
           echo "✅ Keystore decoded successfully"
 
+      - name: Run DIY.sh patches          # ← 紧接这里
+        if: steps.check_build.outputs.build_needed == 'true'
+        run: |
+          cp -r "$GITHUB_WORKSPACE/DIY"  src/
+          cd src
+          bash DIY/diy.sh
+
+          
       - name: Build release APKs
         if: steps.check_build.outputs.build_needed == 'true'
         run: |
