@@ -9,9 +9,6 @@ on:
         default: false
         type: boolean
 
-
-
-
 permissions:
   contents: write
   pull-requests: write
@@ -184,7 +181,7 @@ jobs:
         run: |
           cp -r "$GITHUB_WORKSPACE/DIY"  src/
           cd src
-          bash DIY/diy.sh
+          bash DIY/DIY.sh
 
           
       - name: Build release APKs
