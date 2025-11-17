@@ -23,7 +23,7 @@ jobs:
 
     env:
       # Build configuration
-      SOURCE_REPO: "xinyi1984/TV"
+      SOURCE_REPO: "FongMi/TV"
       SOURCE_BRANCH: "fongmi"
       API_RETRY_COUNT: 3
       API_RETRY_DELAY: 5
