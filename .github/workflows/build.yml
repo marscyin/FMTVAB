@@ -23,8 +23,8 @@ jobs:
 
     env:
       # Build configuration
-      SOURCE_REPO: "jadehh/FongMiTV"
-      SOURCE_BRANCH: "release"
+      SOURCE_REPO: "FongMi/TV"
+      SOURCE_BRANCH: "fongmi"
       API_RETRY_COUNT: 3
       API_RETRY_DELAY: 5
 
