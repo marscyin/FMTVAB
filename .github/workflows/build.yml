@@ -3,6 +3,34 @@ name: Build
 on:
   workflow_dispatch:
     inputs:
+      git_url: 
+        description: 'Your  git url'      
+        required: true 
+        default: 'https://github.com/gedoor/legado.git'
+      git_tag:
+        description: 'Your  git tag'      
+        required: true 
+        default: '3.23.110211'
+      app_channel:
+        description: 'Your  build channel(App)'      
+        required: true 
+        default: 'App'
+      app_custom:
+        description: 'Your  custom script'      
+        required: true 
+        default: 'diy_test.sh'
+      app_name: 
+        description: 'app name'      
+        required: true 
+        default: '测试'
+      app_suffix: 
+        description: 'app suffix'      
+        required: true 
+        default: 'A'
+      app_launch_name: 
+        description: 'app launch name'      
+        required: true 
+        default: '测试.A'
       force_build:
         description: "Force build even if no changes detected"
         required: false
