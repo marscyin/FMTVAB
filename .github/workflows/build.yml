@@ -4,25 +4,22 @@ on:
   workflow_dispatch:
     inputs:
       git_url: 
-        description: 'Your  git url'      
+        description: 'GIT仓库'      
         required: true 
-        default: 'https://github.com/gedoor/legado.git'
+        default: 'https://github.com/marscyin/FMTVAB.git'
       git_tag:
-        description: 'Your  git tag'      
+        description: '版本号'      
         required: true 
-        default: '3.23.110211'
-      app_channel:
-        description: 'Your  build channel(App)'      
-        required: true 
-        default: 'App'
+        default: '0.6.8'
+    
       app_custom:
-        description: 'Your  custom script'      
+        description: '个性化内容'      
         required: true 
         default: 'diy_test.sh'
       app_name: 
-        description: 'app name'      
+        description: '应用名'      
         required: true 
-        default: '测试'
+        default: '光'
       app_suffix: 
         description: 'app suffix'      
         required: true 
