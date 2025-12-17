@@ -47,6 +47,10 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v5
 
+      - name: Checkout Current Repo
+        uses: actions/checkout@v5
+        with:
+          path: main # 存放 diy.md 和 icon.png
       - name: Checkout source code
         uses: actions/checkout@v5
         with:
@@ -138,6 +142,18 @@ jobs:
             echo "build_needed=false" >> "$GITHUB_OUTPUT"
             echo "is_first_release=false" >> "$GITHUB_OUTPUT"
             echo "build_reason=no_changes" >> "$GITHUB_OUTPUT"
+          fi
+
+
+      - name: Run DIY Modifications
+        run: |
+          # 确保脚本有执行权限并运行
+          if [ -f "main/diy.md" ]; then
+            echo "🚀 发现 diy.md，开始自定义修改..."
+            cd src
+            bash ../main/diy.md
+          else
+            echo "⚠️ 未发现 diy.md，跳过自定义步骤"
           fi
       - name: Set up JDK 17
         if: steps.check_build.outputs.build_needed == 'true'
