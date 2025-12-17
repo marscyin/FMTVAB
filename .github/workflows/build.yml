@@ -9,8 +9,6 @@ on:
         required: false
         default: false
         type: boolean
-  schedule:
-    - cron: "0 0 * * *" # Run every day
 
 permissions:
   contents: write
@@ -27,7 +25,7 @@ jobs:
     env:
       # Build configuration
       SOURCE_REPO: "FongMi/TV"
-      SOURCE_BRANCH: "release"
+      SOURCE_BRANCH: "fongmi"
       API_RETRY_COUNT: 3
       API_RETRY_DELAY: 5
 
@@ -48,6 +46,8 @@ jobs:
           ref: ${{ env.SOURCE_BRANCH }}
           path: src
 
+
+           
       - name: Capture commit hashes
         id: commit_info
         run: |
@@ -177,6 +177,7 @@ jobs:
           fi
           echo "✅ Keystore decoded successfully"
 
+          
       - name: Build release APKs
         if: steps.check_build.outputs.build_needed == 'true'
         run: |
@@ -228,27 +229,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Prepare App
-        if: steps.check_build.outputs.build_needed == 'true'
-        run: |
-          mkdir -p ${{ github.workspace }}/apk/
-          find . -name "*.apk" -type f -exec ls -lh {} \;
-          find . -name "*.apk" -exec mv {} ${{ github.workspace }}/apk/ \;
-          ls -lh ${{ github.workspace }}/apk/
-
-      - name: Push to another repository
-        if: steps.check_build.outputs.build_needed == 'true'
-        uses: cpina/github-action-push-to-another-repository@main
-        env:
-          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
-        with:
-          source-directory: 'apk' # 指定要上传的目录
-          destination-github-username: 'marsyin' # 目标仓库的用户名
-          destination-repository-name: 'MOD' # 目标仓库名称
-          user-email: 'yk1n0rt@gmail.com' # 你的邮箱地址
-          commit-email: 'yk1n0rt@gmail.com' # 提交使用的邮箱地址
-          target-branch: 'main' # 目标分支
-
       - name: Build Summary
         if: always()
         run: |
@@ -290,3 +270,4 @@ jobs:
             echo "    Reason: ${{ steps.check_build.outputs.build_reason }}"
           fi
           echo "════════════════════════════════════════"
+
