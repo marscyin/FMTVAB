@@ -3,36 +3,13 @@ name: Build
 on:
   workflow_dispatch:
     inputs:
-      git_url: 
-        description: 'GIT仓库'      
-        required: true 
-        default: 'https://github.com/marscyin/FMTVAB.git'
-      git_tag:
-        description: '版本号'      
-        required: true 
-        default: '0.6.8'
-    
-      app_custom:
-        description: '个性化内容'      
-        required: true 
-        default: 'diy_test.sh'
-      app_name: 
-        description: '应用名'      
-        required: true 
-        default: '光'
-      app_suffix: 
-        description: 'app suffix'      
-        required: true 
-        default: 'A'
-      app_launch_name: 
-        description: 'app launch name'      
-        required: true 
-        default: '测试.A'
       force_build:
         description: "Force build even if no changes detected"
         required: false
         default: false
         type: boolean
+  schedule:
+    - cron: "0 * * * *" # Run every hour
 
 permissions:
   contents: write
@@ -48,7 +25,7 @@ jobs:
 
     env:
       # Build configuration
-      SOURCE_REPO: "marscyin/FongMiTV"
+      SOURCE_REPO: "FongMi/TV"
       SOURCE_BRANCH: "release"
       API_RETRY_COUNT: 3
       API_RETRY_DELAY: 5
@@ -61,17 +38,15 @@ jobs:
 
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Checkout source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.SOURCE_REPO }}
           ref: ${{ env.SOURCE_BRANCH }}
           path: src
 
-
-           
       - name: Capture commit hashes
         id: commit_info
         run: |
@@ -176,7 +151,7 @@ jobs:
 
       - name: Cache Gradle dependencies
         if: steps.check_build.outputs.build_needed == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.gradle/caches
@@ -201,9 +176,10 @@ jobs:
           fi
           echo "✅ Keystore decoded successfully"
 
-          
       - name: Build release APKs
+        id: build_apks
         if: steps.check_build.outputs.build_needed == 'true'
+        continue-on-error: true
         run: |
           echo "🔨 Building release APKs..."
           cd src
@@ -228,12 +204,15 @@ jobs:
             
           echo "✅ APK build completed successfully"
 
+      - name: Clean up keystore
+        if: steps.check_build.outputs.build_needed == 'true'
+        run: |
           # Clean up keystore for security
           rm -f "$GITHUB_WORKSPACE/keystore.jks"
           echo "🔐 Keystore cleaned up"
 
       - name: Create GitHub Release
-        if: steps.check_build.outputs.build_needed == 'true'
+        if: steps.check_build.outputs.build_needed == 'true' && steps.build_apks.outcome == 'success'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.commit_info.outputs.short_hash }}
@@ -274,7 +253,7 @@ jobs:
           echo ""
           echo "🚀 **Build Status:**"
           if [ "${{ steps.check_build.outputs.build_needed }}" = "true" ]; then
-            echo "    Status: ✅ Build Executed"
+            echo "    Build Attempted: ✅ Yes"
             echo "    Reason: ${{ steps.check_build.outputs.build_reason }}"
             if [ "${{ steps.check_build.outputs.is_first_release }}" = "true" ]; then
               echo "    Type: 🎉 First Release"
@@ -282,12 +261,15 @@ jobs:
               echo "    Type: 📦 Update Release"
             fi
             
-            # Check if release was created successfully
-            if [ "${{ job.status }}" = "success" ]; then
+            # Check APK build result
+            if [ "${{ steps.build_apks.outcome }}" = "success" ]; then
+              echo "    APK Build: ✅ Succeeded"
               echo "    Release: ✅ Created Successfully"
               echo "    Tag: ${{ steps.commit_info.outputs.short_hash }}"
             else
-              echo "    Release: ❌ Failed to Create"
+              echo "    APK Build: ⚠️ Failed (upstream source issue)"
+              echo "    Release: ⏭️ Skipped due to build failure"
+              echo "    Note: The upstream FongMi/TV repository may have build issues"
             fi
           else
             echo "    Status: ⏭️ Build Skipped"
