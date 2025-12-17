@@ -3,11 +3,20 @@ name: Build
 on:
   workflow_dispatch:
     inputs:
+      app_name:
+        description: "应用名称 (例如: 我的电视)"
+        default: "FongMi TV"
+      app_id:
+        description: "应用包名 (例如: com.my.tv)"
+        default: "com.fongmi.android.tv"
+      api_url:
+        description: "内置接口地址 (空则不内置)"
+        default: ""
       force_build:
-        description: "Force build even if no changes detected"
-        required: false
-        default: false
+        description: "强制编译"
         type: boolean
+        default: false
+
 
 permissions:
   contents: write
