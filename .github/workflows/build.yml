@@ -53,10 +53,6 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v5
 
-      - name: Checkout Current Repo
-        uses: actions/checkout@v5
-        with:
-          path: main # 存放 diy.md 和 icon.png
       - name: Checkout source code
         uses: actions/checkout@v5
         with:
@@ -206,11 +202,6 @@ jobs:
             echo "✅ 应用名称 → $APP_NAME"
           fi
 
-          # 2. 包名
-          if [[ -n "$APP_ID" && "$APP_ID" != "com.fongmi.android.tv" ]]; then
-            sed -i "s/applicationId \"com.fongmi.android.tv\"/applicationId \"$APP_ID\"/g" app/build.gradle
-            echo "✅ 包名 → $APP_ID"
-          fi
 
           # 3. 版本号（空就自动加日期）
           DATE=$(date +%Y%m%d)
@@ -266,9 +257,17 @@ jobs:
             --stacktrace
             
           echo "✅ APK build completed successfully"
+
+          # 2. 把产物统一拷到根目录 apks/（后面 release 用）
+          mkdir -p "$GITHUB_WORKSPACE/apks"
+          cp app/build/outputs/apk/*/release/*.apk "$GITHUB_WORKSPACE/apks/"
+          echo "✅ APK 列表："
+          ls -l "$GITHUB_WORKSPACE/apks/"
           # Clean up keystore for security
           rm -f "$GITHUB_WORKSPACE/keystore.jks"
           echo "🔐 Keystore cleaned up"
+
+
       - name: Create GitHub Release
         if: steps.check_build.outputs.build_needed == 'true'
         uses: softprops/action-gh-release@v2
@@ -282,7 +281,7 @@ jobs:
             - **Build Reason:** ${{ steps.check_build.outputs.build_reason }}
             📦 **Downloads:**
             APK files are attached to this release. Choose the appropriate variant for your device.
-          files: src/**/build/outputs/apk/**/release/*.apk
+          files: apks/*.apk
           draft: false
           prerelease: false
         env:
