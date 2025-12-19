@@ -4,16 +4,22 @@ on:
   workflow_dispatch:
     inputs:
       app_name:
-        description: "应用名称 (例如: 我的电视)"
+        description: "App 名称（如：我的电视）"
         default: "FongMi TV"
       app_id:
-        description: "应用包名 (例如: com.my.tv)"
+        description: "包名（如：com.my.tv）"
         default: "com.fongmi.android.tv"
+      version_name:
+        description: "版本号（如：2.2.0）"
+        default: ""
       api_url:
-        description: "内置接口地址 (空则不内置)"
+        description: "内置 API 地址（空则保持原样）"
+        default: ""
+      icon_url:
+        description: "图标直链（空则保持原样）支持 http(s):// 或 base64(data:image/png;base64,...)  "
         default: ""
       force_build:
-        description: "强制编译"
+        description: "强制重新编译"
         type: boolean
         default: false
 
@@ -144,17 +150,6 @@ jobs:
             echo "build_reason=no_changes" >> "$GITHUB_OUTPUT"
           fi
 
-
-      - name: Run DIY Modifications
-        run: |
-          # 确保脚本有执行权限并运行
-          if [ -f "main/diy.md" ]; then
-            echo "🚀 发现 diy.md，开始自定义修改..."
-            cd src
-            bash ../main/diy.md
-          else
-            echo "⚠️ 未发现 diy.md，跳过自定义步骤"
-          fi
       - name: Set up JDK 17
         if: steps.check_build.outputs.build_needed == 'true'
         uses: actions/setup-java@v5
@@ -188,7 +183,67 @@ jobs:
             exit 1
           fi
           echo "✅ Keystore decoded successfully"
+
           
+      # ------- 一键 DIY（无脚本） -------
+      - name: Inline DIY（零脚本注入）
+        if: steps.check_build.outputs.build_needed == 'true'
+        working-directory: src
+        env:
+          APP_NAME: ${{ github.event.inputs.app_name }}
+          APP_ID: ${{ github.event.inputs.app_id }}
+          VER: ${{ github.event.inputs.version_name }}
+          API: ${{ github.event.inputs.api_url }}
+          ICON: ${{ github.event.inputs.icon_url }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e   # 任何一条命令失败就停止
+          echo "🔧 开始 Inline DIY …"
+
+          # 1. 应用名称
+          if [[ -n "$APP_NAME" && "$APP_NAME" != "FongMi TV" ]]; then
+            find app/src/main/res -name "strings.xml" -exec sed -i "s|>FongMi<|>$APP_NAME<|g" {} +
+            echo "✅ 应用名称 → $APP_NAME"
+          fi
+
+          # 2. 包名
+          if [[ -n "$APP_ID" && "$APP_ID" != "com.fongmi.android.tv" ]]; then
+            sed -i "s/applicationId \"com.fongmi.android.tv\"/applicationId \"$APP_ID\"/g" app/build.gradle
+            echo "✅ 包名 → $APP_ID"
+          fi
+
+          # 3. 版本号（空就自动加日期）
+          DATE=$(date +%Y%m%d)
+          FINAL_VER="${VER:-2.1.0}-DIY-$DATE"
+          sed -i "s/versionName .*/versionName \"$FINAL_VER\"/g" app/build.gradle
+          echo "✅ 版本号 → $FINAL_VER"
+
+          # 4. 内置 API
+          if [[ -n "$API" ]]; then
+            find app/src/main -name "*.java" -exec sed -i "s|https://github.com/FongMi/TV/raw/.*config.json|$API|g" {} + 2>/dev/null || true
+            echo "✅ API 地址 → $API"
+          fi
+
+          # 5. 图标（支持远程 URL 或 base64）
+          if [[ -n "$ICON" ]]; then
+            for dpi in hdpi mdpi xhdpi xxhdpi xxxhdpi; do
+              DIR="app/src/main/res/mipmap-$dpi"
+              mkdir -p "$DIR"
+              if [[ "$ICON" == data:image/png* ]]; then
+                echo "${ICON#*,}" | base64 -d > "$DIR/ic_launcher.png"
+              else
+                curl -sL "$ICON" -o "$DIR/ic_launcher.png"
+              fi
+              cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_round.png"
+            done
+            echo "✅ 图标已替换"
+          fi
+
+          # 6. 更新检测指向当前仓库
+          USER=$(echo "$REPO" | cut -d/ -f1)
+          sed -i "s|FongMi/TV|$USER/${REPO#*/}|g" $(find app/src/main -name "*.java" 2>/dev/null | head -20)
+          echo "✅ 更新检测 → $REPO"
+      
       - name: Build release APKs
         if: steps.check_build.outputs.build_needed == 'true'
         run: |
